@@ -1,0 +1,40 @@
+name: pm-hunter-summary
+
+on:
+  schedule:
+    # TR 15:30 ve 21:30 (UTC 12:30 ve 18:30)
+    - cron: "30 12 * * *"
+    - cron: "30 18 * * *"
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install requests
+
+      - name: Restore snapshot cache
+        uses: actions/cache@v4
+        with:
+          path: snapshot.json
+          key: snapshot-cache
+          restore-keys: snapshot-cache
+
+      - run: python hunter.py
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ALERT_ONLY: "0"
+          SEND_IF_EMPTY: "1"
+
+      - name: Save snapshot cache
+        uses: actions/cache@v4
+        with:
+          path: snapshot.json
+          key: snapshot-cache
